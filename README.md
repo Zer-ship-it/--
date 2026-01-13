@@ -1,7 +1,7 @@
 # --
 Техническая документация по подключению Alt Workstation и Alt Jeos
 
-z1 BR SRV
+z1 B-S
 
 apt-get update
 
@@ -18,9 +18,127 @@ rm -rf /etc/samba/smb.conf /var/{lib,cache}/samba
 
 mkdir -p /var/lib/samba/sysvol 
 
-samba-tool domain provision --realm=au-team.irpo --domain=au-team --adminpass='P@ssw0rd' --dns-backend=BIND9_DLZ --server-role=dc --use-rcf2307
+samba-tool domain provision --realm=au-team.irpo --domain=au-team --adminpass='P@ssw0rd' --dns-backend=BIND9_DLZ --server-role=dc 
 
-z2z3 HQ-SRV
+H-C
+apt-get update
+
+apt-get install gnome3-default lightdm
+
+Перезагружаем и заходим в Gnome
+
+apt-get install admx-* admc gpui sudo gpupdate -y
+
+192.168.3.10:8080 (центр управления системой)
+
+авторизируемся
+
+настройки
+
+режим эксперта
+
+Веб-интерфейс
+
+Порт с 8080 на 8081
+
+применить
+
+перезагрузить HTTP сервер
+
+авторизируемся
+
+Домен
+
+Тип ДОМЕНА: Active Directory
+
+dns server 192.168.3.10
+
+пароль администратора 2раза 
+
+применить (при успешном применении служба OK данные изменятся)
+
+ПЕРЕКЛЮЧАЕМ ДНС В ПРОВОДНОМ СОЕДИНЕНИИ
+
+ПАРАМЕТРЫ IPv4
+
+dns 192.168.3.10 
+
+сохранить 
+
+nmcli 
+
+nmcli con mod "Проводное соединение 1" ipv4.ignore-auto-dns yes
+
+nmcli con show
+
+ipv4 dns 192.168.3.10 (должен быть)
+
+acc
+
+аутентификация 
+
+Домен Active Directory
+
+рабочая группа au-team
+
+Administator
+
+P@ssw0rd (если невозможно найти домен выкл/вкл поддержку сети - интерфейс)
+
+B-S
+samba-tool group add hq (создаём группу hq) 
+
+for i in $(seq 1 5); do samba-tool user add user$i.hq 'P@ssw0rd'; done
+
+for i in $(seq 1 5); do samba-tool group addmembers hq user$i.hq; done 
+
+samba-tool group list
+
+samba-tool group listmembers hq 
+
+admx-msi-setup
+
+H-C
+
+admx-msi-setup
+
+roleadd hq wheel
+
+rolelst
+
+mcedit /etc/sudoers
+
+находим User_Alias WHEEL_USERS = %wheel,  добавляем %AU-TEAM\\hq
+
+находим Cmnd_Alias и пишем в конце
+
+Cmnd_Alias SHELLCMD = /usr/bin/id, /bin/cat, /bin/grep
+
+находим # WHEEL_USERS ALL=(ALL:ALL) ALL и изменяем на WHEEL_USERS ALL=(ALL:ALL) SHELLCMD (# УДАЛЯЕМ)
+
+СОХРАНЯЕМ
+
+exit
+
+kinit
+
+admc 
+
+Объекты групповой политики > au-team.irpo > правой кнопкой > создать групповую политику > имя *sudoers*> принудительно галочка
+
+> правой кнопокой > edit > ПК >Административные шаблоны>Samba>Настройки Unix>Управление разпешениями Sudo>Включено
+> 
+>Редактирова>(Добавляем команды которые разрешены /usr/bin/id, /bin/cat, /bin/grep)>ОК>gpupdate -f
+Заходим в пользователя из группы hq
+> 
+user3.hq
+
+P@ssw0rd
+
+sudo id (проверям работают команды или нет)
+
+
+z2z3 H-S
 
 lsbik
 
@@ -61,7 +179,7 @@ exportfs –arv
 
 systemctl enable –now nfs-server.service
 
-HQ-CLI
+H-C
 
 mkdir /mnt/nfs
 
@@ -77,7 +195,7 @@ mount –a
 
 df -h
 
-z4 ISP
+z4 I
 
 apt-get install –y chrony
 
@@ -93,7 +211,7 @@ systemctl restart chronyd
 
 systemctl enable –now chronyd
 
-HQ-RTR 
+H-R 
 
 mcedit /etc/chrony.conf 
 
@@ -105,7 +223,7 @@ systemctl enable –now chronyd
 
 chronyc sources
 
-BR-RTR 
+B-R 
 
 mcedit /etc/chrony.conf 
 
@@ -117,7 +235,7 @@ systemctl enable –now chronyd
 
 chronyc sources
 
-HQ-SRV
+H-S
 
 mcedit /etc/chrony.conf 
 
@@ -129,7 +247,7 @@ systemctl enable –now chronyd
 
 chronyc sources
 
-BR-SRV
+B-S
 
 mcedit /etc/chrony.conf 
 
@@ -141,7 +259,7 @@ systemctl enable –now chronyd
 
 chronyc sources
 
-HQ-CLI
+H-C
 
 mcedit /etc/chrony.conf 
 
@@ -153,11 +271,11 @@ systemctl enable –now chronyd
 
 chronyc sources
 
-ISP
+I
 
 chronyc clients 
 
-z5 BR-SRV
+z5 B-S
 
 apt-get update && apt-get install ansible sshpass –y
 
@@ -175,7 +293,7 @@ rpm [p10] http://ftp.altlinux.ru/pub/distributions/ALTLinux p10/branch/noarch cl
 
 apt-get update && apt-get install ansible sshpass –y
 
-HQ-CLI
+H-C
 
 cd /etc/openssh/
 
@@ -201,7 +319,7 @@ systecmtl enable sshd
 
 systecmtl status sshd
 
-BR-SRV
+B-S
 
 cd /etc/ansible/
 
